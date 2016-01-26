@@ -110,6 +110,10 @@ func commandOutput(commandText string) ([]byte, error) {
 	return outputBytes, nil
 }
 
+func ExecCmdWithOutput(commandText string) ([]byte, error) {
+  return commandOutput(commandText)
+}
+
 // commandRun executes a command
 func commandRun(commandText string, onCommand func(*exec.Cmd)) error {
 	cmd, tmpFileName, err := execCmd(commandText)

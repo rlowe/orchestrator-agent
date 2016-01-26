@@ -19,8 +19,10 @@ package http
 import (
 	"encoding/json"
 	"errors"
+  "fmt"
 	"net/http"
 	"os"
+  "strings"
 	"time"
 
 	"github.com/go-martini/martini"
@@ -415,6 +417,26 @@ func (this *HttpAPI) AbortSeed(params martini.Params, r render.Render, req *http
 	r.JSON(200, err == nil)
 }
 
+// RunCommand
+func (this *HttpAPI) RunCommand(params martini.Params, r render.Render, req *http.Request) {
+  var err error
+  if err = validateToken(req.URL.Query().Get("token")); err != nil {
+    r.JSON(500, &APIResponse{Code: ERROR, Message: err.Error()})
+    return
+  }
+  commandOutput, err := osagent.ExecCmdWithOutput(params["cmd"])
+  text := strings.Trim(fmt.Sprintf("%s", commandOutput), "\n")
+  lines := strings.Split(text, "=n")
+
+  if err != nil {
+    r.JSON(500, lines)
+    return
+  }
+
+  r.JSON(200, lines)
+  return
+}
+
 // SeedCommandCompleted
 func (this *HttpAPI) SeedCommandCompleted(params martini.Params, r render.Render, req *http.Request) {
 	var err error
@@ -478,5 +500,6 @@ func (this *HttpAPI) RegisterRequests(m *martini.ClassicMartini) {
 	m.Get("/api/abort-seed/:seedId", this.AbortSeed)
 	m.Get("/api/seed-command-completed/:seedId", this.SeedCommandCompleted)
 	m.Get("/api/seed-command-succeeded/:seedId", this.SeedCommandSucceeded)
+  m.Get("/api/commands/:cmd", this.RunCommand)
 	m.Get(config.Config.StatusEndpoint, this.Status)
 }
